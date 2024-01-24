@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_portfolio/models/Proffesions.dart';
 import 'package:my_portfolio/models/Profile.dart';
 import 'package:my_portfolio/models/Projects.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:my_portfolio/models/Skills.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'models/education.dart';
 
@@ -34,29 +34,25 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final String profile_image = 'https://www.instagram.com/p/CRu4Q_-AwvL/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==';
-  List<Profession> profession = [];
-  List<Education> education = [];
-  List<Education> workExperience = [];
-  List<Projects> projects = [];
-  late Profile profile;
-
+  final ScrollController _scrollController = ScrollController();
   late Profession dropdownvalue;
-
+  GlobalKey aboutKey = GlobalKey();
+  GlobalKey skillsKey = GlobalKey();
+  GlobalKey projectsKey = GlobalKey();
+  GlobalKey educationKey = GlobalKey();
+  GlobalKey experienceKey = GlobalKey();
   @override
   void initState() {
     super.initState();
-    profession = getProfessions();
-    education = getEducation();
-    workExperience = getWorkExperience();
-    projects = getProjects();
-    profile = getProfile();
-    dropdownvalue = profession[0];
+    dropdownvalue = getProfessions()[0];
+  }
+
+  void _scrollToSection(double offset) {
+    _scrollController.animateTo(offset, duration: Duration(milliseconds: 500), curve: Curves.easeInOut);
   }
 
   @override
   Widget build(BuildContext context) {
-    print(education);
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -66,7 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
             DropdownButton(
               value: dropdownvalue.title,
               icon: const Icon(Icons.keyboard_arrow_down),
-              items: profession.map((Profession profession) {
+              items: getProfessions().map((Profession profession) {
                 return DropdownMenuItem(
                   value: profession.title,
                   child: Text(profession.title),
@@ -74,14 +70,42 @@ class _MyHomePageState extends State<MyHomePage> {
               }).toList(),
               onChanged: (String? newValue) {
                 setState(() {
-                  dropdownvalue = profession.firstWhere((profession) => profession.title == newValue);
+                  dropdownvalue = getProfessions().firstWhere((profession) => profession.title == newValue);
                 });
               },
             ),
           ],
         ),
+        actions: [
+          ElevatedButton(
+              onPressed: () {
+                Scrollable.ensureVisible(aboutKey.currentContext!);
+              },
+              child: const Text("About")),
+          ElevatedButton(
+              onPressed: () {
+                Scrollable.ensureVisible(skillsKey.currentContext!);
+              },
+              child: const Text("Skills")),
+          ElevatedButton(
+              onPressed: () {
+                Scrollable.ensureVisible(projectsKey.currentContext!);
+              },
+              child: const Text("Projects")),
+          ElevatedButton(
+              onPressed: () {
+                Scrollable.ensureVisible(educationKey.currentContext!);
+              },
+              child: const Text("Education")),
+          ElevatedButton(
+              onPressed: () {
+                Scrollable.ensureVisible(experienceKey.currentContext!);
+              },
+              child: const Text("Experience")),
+        ],
       ),
       body: SingleChildScrollView(
+        controller: _scrollController,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -90,20 +114,20 @@ class _MyHomePageState extends State<MyHomePage> {
               Center(
                 child: CircleAvatar(
                   radius: 50.0,
-                  backgroundImage: NetworkImage(profile_image),
+                  backgroundImage: AssetImage(getProfile().profile_image),
                 ),
               ),
               const SizedBox(height: 16.0),
               Flex(direction: Axis.horizontal, mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                Text('Phone: ${profile.phone}'),
-                Text('Email: ${profile.email}'),
+                Text('Phone: ${getProfile().phone}'),
+                Text('Email: ${getProfile().email}'),
                 InkWell(
-                  child: Text('LinkedIn: ${profile.LinkedIn}'),
-                  onTap: () => launchUrlString(profile.LinkedIn),
+                  child: Text('LinkedIn: ${getProfile().LinkedIn}'),
+                  onTap: () => launchUrlString(getProfile().LinkedIn),
                 ),
                 InkWell(
-                  child: Text('GitHub: ${profile.GitHub}'),
-                  onTap: () => launchUrlString(profile.GitHub),
+                  child: Text('GitHub: ${getProfile().GitHub}'),
+                  onTap: () => launchUrlString(getProfile().GitHub),
                 ),
               ]),
               const SizedBox(height: 16.0),
@@ -117,61 +141,80 @@ class _MyHomePageState extends State<MyHomePage> {
                 Text('• Tamil – Basic'),
               ]),
               const SizedBox(height: 16.0),
-              const Text(
-                'Soft Skills',
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+              Container(
+                key: skillsKey,
+                child: Column(
+                  children: [
+                    const Text('Soft Skills', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                    ListView.builder(
+                        scrollDirection: Axis.vertical,
+                        shrinkWrap: true,
+                        itemCount: getSoftSkills().length,
+                        itemBuilder: (context, index) => Chip(label: Text(getSoftSkills()[index].title))),
+                  ],
+                ),
               ),
-              const Flex(direction: Axis.horizontal, mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                Chip(label: Text('• Problem-Solving')),
-                Chip(label: Text('• Teamwork')),
-                Chip(label: Text('• Continuous Learning')),
-                Chip(label: Text('• Communication'))
-              ]),
               const SizedBox(height: 16.0),
-              const Text(
-                'Summary',
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+              Container(
+                key: aboutKey,
+                child: Column(
+                  children: [
+                    const Text('About', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                    Text(dropdownvalue.summery),
+                  ],
+                ),
               ),
-              Text(dropdownvalue.summery),
               const SizedBox(height: 16.0),
-              const Text(
-                'Experience',
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+              Container(
+                key: experienceKey,
+                child: Column(
+                  children: [
+                    const Text('Experience', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                    ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: getWorkExperience().length,
+                        itemBuilder: (context, index) => ListTile(
+                              title: Text(getWorkExperience()[index].title),
+                              subtitle: Text(getWorkExperience()[index].subTitle),
+                              trailing: Text(getWorkExperience()[index].duration ?? ""),
+                            )),
+                  ],
+                ),
               ),
-              ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: workExperience.length,
-                  itemBuilder: (context, index) => ListTile(
-                        title: Text(workExperience[index].title),
-                        subtitle: Text(workExperience[index].subTitle),
-                        trailing: Text(workExperience[index].duration ?? ""),
-                      )),
               const SizedBox(height: 16.0),
-              const Text(
-                'Education',
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+              Container(
+                key: educationKey,
+                child: Column(
+                  children: [
+                    const Text('Education', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                    ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: getEducation().length,
+                        itemBuilder: (context, index) => ListTile(
+                              title: Text(getEducation()[index].title),
+                              subtitle: Text(getEducation()[index].subTitle),
+                              trailing: Text(getEducation()[index].duration ?? ""),
+                            )),
+                  ],
+                ),
               ),
-              ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: education.length,
-                  itemBuilder: (context, index) => ListTile(
-                        title: Text(education[index].title),
-                        subtitle: Text(education[index].subTitle),
-                        trailing: Text(education[index].duration ?? ""),
-                      )),
               const SizedBox(height: 16.0),
-              const Text(
-                'Projects',
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+              Container(
+                key: projectsKey,
+                child: Column(
+                  children: [
+                    const Text('Projects', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                    ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: getProjects().length,
+                        itemBuilder: (context, index) => ListTile(
+                              title: Text(getProjects()[index].title),
+                              subtitle: Text(getProjects()[index].subTitle),
+                              trailing: Text(getProjects()[index].subject ?? ""),
+                            )),
+                  ],
+                ),
               ),
-              ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: projects.length,
-                  itemBuilder: (context, index) => ListTile(
-                        title: Text(projects[index].title),
-                        subtitle: Text(projects[index].subTitle),
-                        trailing: Text(projects[index].subject ?? ""),
-                      )),
             ],
           ),
         ),
